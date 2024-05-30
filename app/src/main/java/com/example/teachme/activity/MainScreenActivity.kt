@@ -1,9 +1,6 @@
-package com.example.teachme
+package com.example.teachme.activity
 
-import android.content.Context
 import android.content.Intent
-import android.graphics.fonts.Font
-import android.graphics.fonts.FontStyle
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.sharp.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.googlefonts.Font
@@ -31,6 +26,9 @@ import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.teachme.R
+import com.example.teachme.screen.AboutActivity
+import com.example.teachme.screen.SettingsActivity
 import com.example.teachme.ui.theme.TeachMeTheme
 
 class MainScreenActivity : ComponentActivity() {
@@ -39,7 +37,7 @@ class MainScreenActivity : ComponentActivity() {
         setContent {
             TeachMeTheme {
                 MainScreen(
-                    onStartQuiz = { startActivity(Intent(this, QuizActivity::class.java)) },
+                    onStartQuiz = { startActivity(Intent(this, LessonSelectionActivity::class.java)) },
                     onSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
                     onAbout = { startActivity(Intent(this, AboutActivity::class.java)) }
                 )
@@ -47,7 +45,6 @@ class MainScreenActivity : ComponentActivity() {
         }
     }
 }
-
 
 val provider = GoogleFont.Provider(
     providerAuthority = "com.google.android.gms.fonts",
@@ -58,7 +55,6 @@ val provider = GoogleFont.Provider(
 val fontName = GoogleFont("Lexend")
 
 val fontFamily = FontFamily(Font(googleFont = fontName, fontProvider = provider))
-
 
 @Composable
 fun MainScreen(
@@ -72,8 +68,7 @@ fun MainScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFFFFA500), Color.LightGray)
+                brush = Brush.verticalGradient(listOf(Color(0xFF64B5F6),Color(0xFF0D47A1))
                 )
             )
     ) {
@@ -83,7 +78,6 @@ fun MainScreen(
                 .fillMaxWidth()
                 .padding(24.dp)
                 .align(Alignment.TopEnd),
-
             horizontalArrangement = Arrangement.End
         ) {
             Icon(
@@ -102,11 +96,9 @@ fun MainScreen(
             )
         }
 
-
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             Button(
                 onClick = onStartQuiz,
@@ -115,14 +107,13 @@ fun MainScreen(
                     .clip(CircleShape),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White)
             ) {
-                Text(text = "Zacznij naukę!",
-                    color= Color.Black,
+                Text(
+                    text = "Zacznij naukę!",
+                    color = Color.Black,
                     style = MaterialTheme.typography.headlineLarge,
                     textAlign = TextAlign.Center,
                     fontFamily = fontFamily,
                     fontWeight = FontWeight.Bold
-
-
                 )
             }
         }
