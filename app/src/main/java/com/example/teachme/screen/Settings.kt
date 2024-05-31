@@ -1,4 +1,4 @@
-package com.example.teachme
+package com.example.teachme.screen
 
 import android.content.Context
 import android.os.Bundle
