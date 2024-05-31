@@ -29,8 +29,12 @@ class QuizActivity : ComponentActivity() {
         setContent {
             TeachMeTheme {
                 QuizScreen(
+                    lessonIndex = intent.getIntExtra("LESSON_INDEX", 0),
                     onFinish = {
-                        startActivity(Intent(this, LessonSelectionActivity::class.java))
+                        val resultIntent = Intent()
+                        resultIntent.putExtra("LESSON_INDEX", it)
+                        setResult(RESULT_OK, resultIntent)
+                        finish()
                     }
                 )
             }
@@ -39,7 +43,7 @@ class QuizActivity : ComponentActivity() {
 }
 
 @Composable
-fun QuizScreen(onFinish: () -> Unit) {
+fun QuizScreen(lessonIndex: Int, onFinish: (Int) -> Unit) {
     val questions = listOf(
         "Pytanie 1: Jaka jest stolica Polski?",
         "Pytanie 2: Jaka jest stolica Niemiec?",
@@ -50,44 +54,56 @@ fun QuizScreen(onFinish: () -> Unit) {
 
     val correctAnswers = listOf("Warszawa", "Berlin", "Paryż", "Rzym", "Madryt")
 
+    val initialOptions = questions.indices.map { index ->
+        listOf(correctAnswers[index], "Błędna odpowiedź 1", "Błędna odpowiedź 2", "Błędna odpowiedź 3").shuffled()
+    }
+
+    var options by remember { mutableStateOf(initialOptions) }
     var currentQuestionIndex by remember { mutableStateOf(0) }
     var correctCount by remember { mutableStateOf(0) }
     var wrongCount by remember { mutableStateOf(0) }
-    var buttonColor by remember { mutableStateOf(Color.Gray) }
+    var selectedOptionIndex by remember { mutableStateOf(-1) }
+    var buttonColors by remember { mutableStateOf(List(4) { Color.Gray }) }
     val handler = Handler(Looper.getMainLooper())
 
     if (currentQuestionIndex < questions.size) {
         QuizQuestion(
             question = questions[currentQuestionIndex],
-            correctAnswer = correctAnswers[currentQuestionIndex],
-            onAnswer = { answer ->
+            options = options[currentQuestionIndex],
+            onAnswer = { answer, index ->
+                selectedOptionIndex = index
+                val newColors = buttonColors.toMutableList()
                 if (answer == correctAnswers[currentQuestionIndex]) {
-                    buttonColor = Color.Green
+                    newColors[index] = Color.Green
                     correctCount++
                 } else {
-                    buttonColor = Color.Red
+                    newColors[index] = Color.Red
                     wrongCount++
                 }
+                buttonColors = newColors
                 handler.postDelayed({
                     currentQuestionIndex++
-                    buttonColor = Color.Gray
+                    selectedOptionIndex = -1
+                    buttonColors = List(4) { Color.Gray }
                 }, 1000)
             },
-            buttonColor = buttonColor
+            buttonColors = buttonColors
         )
     } else {
-        QuizSummary(
-            correctCount = correctCount,
-            wrongCount = wrongCount,
-            onBackToLessons = onFinish
-        )
+        if (correctCount == questions.size) {
+            onFinish(lessonIndex)
+        } else {
+            QuizSummary(
+                correctCount = correctCount,
+                wrongCount = wrongCount,
+                onBackToLessons = { onFinish(-1) }
+            )
+        }
     }
 }
 
 @Composable
-fun QuizQuestion(question: String, correctAnswer: String, onAnswer: (String) -> Unit, buttonColor: Color) {
-    val options = listOf(correctAnswer, "Błędna odpowiedź 1", "Błędna odpowiedź 2", "Błędna odpowiedź 3").shuffled()
-
+fun QuizQuestion(question: String, options: List<String>, onAnswer: (String, Int) -> Unit, buttonColors: List<Color>) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -103,10 +119,10 @@ fun QuizQuestion(question: String, correctAnswer: String, onAnswer: (String) -> 
             modifier = Modifier.padding(bottom = 32.dp)
         )
 
-        options.forEach { option ->
+        options.forEachIndexed { index, option ->
             Button(
-                onClick = { onAnswer(option) },
-                colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                onClick = { onAnswer(option, index) },
+                colors = ButtonDefaults.buttonColors(containerColor = buttonColors[index]),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
@@ -155,6 +171,6 @@ fun QuizSummary(correctCount: Int, wrongCount: Int, onBackToLessons: () -> Unit)
 @Composable
 fun QuizScreenPreview() {
     TeachMeTheme {
-        QuizScreen(onFinish = {})
+        QuizScreen(lessonIndex = 0, onFinish = {})
     }
 }

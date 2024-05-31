@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.teachme.activity.MainScreenActivity
 import com.example.teachme.R
 import com.example.teachme.ui.theme.TeachMeTheme
 import kotlinx.coroutines.delay

@@ -1,9 +1,11 @@
 package com.example.teachme.activity
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -16,19 +18,27 @@ import androidx.compose.ui.unit.dp
 import com.example.teachme.ui.theme.TeachMeTheme
 
 class LessonSelectionActivity : ComponentActivity() {
-    private var completedLessons = mutableStateListOf<Boolean>()
+    private var completedLessons = mutableStateListOf(false, false, false)
+
+    private val quizLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val lessonIndex = result.data?.getIntExtra("LESSON_INDEX", -1) ?: -1
+            if (lessonIndex >= 0) {
+                completedLessons[lessonIndex] = true
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        completedLessons.addAll(listOf(false, false, false))
         setContent {
             TeachMeTheme {
                 LessonSelectionScreen(
                     completedLessons = completedLessons,
                     onLessonSelected = { lessonIndex ->
                         val intent = Intent(this, QuizActivity::class.java)
-                        startActivity(intent)
-                        completedLessons[lessonIndex] = true
+                        intent.putExtra("LESSON_INDEX", lessonIndex)
+                        quizLauncher.launch(intent)
                     }
                 )
             }
