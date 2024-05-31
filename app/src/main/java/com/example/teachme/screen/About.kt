@@ -1,4 +1,4 @@
-package com.example.teachme
+package com.example.teachme.screen
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.teachme.R
 import com.example.teachme.ui.theme.TeachMeTheme
 
 class AboutActivity : ComponentActivity() {
