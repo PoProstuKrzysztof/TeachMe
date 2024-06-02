@@ -45,7 +45,7 @@ fun AboutScreen() {
             contentDescription = "Logo WSEI",
             modifier = Modifier.size(100.dp).padding(vertical = 16.dp)
         )
-        Text(text = "Informacje o autorach aplikacji...")
+        Text(text = "Autor: Krzysztof Palonek")
     }
 }
 

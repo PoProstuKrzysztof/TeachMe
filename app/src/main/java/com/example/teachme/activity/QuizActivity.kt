@@ -6,14 +6,17 @@ import android.os.Handler
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.googlefonts.Font
@@ -22,17 +25,33 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.teachme.ui.theme.TeachMeTheme
+import com.example.teachme.data.AppDatabase
+import com.example.teachme.data.Question
+import com.example.teachme.repositories.QuestionRepository
+import com.example.teachme.viewmodel.QuestionViewModel
+import com.example.teachme.viewmodel.QuestionViewModelFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 
 class QuizActivity : ComponentActivity() {
+    private val applicationScope = CoroutineScope(SupervisorJob())
+    private val database by lazy { AppDatabase.getDatabase(this, applicationScope) }
+    private val questionRepository by lazy { QuestionRepository(database.questionDao()) }
+    private val questionViewModel: QuestionViewModel by viewModels {
+        QuestionViewModelFactory(questionRepository)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val lessonId = intent.getIntExtra("LESSON_ID", 0)
         setContent {
             TeachMeTheme {
                 QuizScreen(
-                    lessonIndex = intent.getIntExtra("LESSON_INDEX", 0),
+                    lessonId = lessonId,
+                    questionViewModel = questionViewModel,
                     onFinish = {
                         val resultIntent = Intent()
-                        resultIntent.putExtra("LESSON_INDEX", it)
+                        resultIntent.putExtra("LESSON_ID", it)
                         setResult(RESULT_OK, resultIntent)
                         finish()
                     },
@@ -44,40 +63,16 @@ class QuizActivity : ComponentActivity() {
 }
 
 @Composable
-fun QuizScreen(lessonIndex: Int, onFinish: (Int) -> Unit, onBackToLessons: () -> Unit) {
-    val questions = listOf(
-        "Pytanie 1: Co to jest adres IP?",
-        "Pytanie 2: Co to jest DNS?",
-        "Pytanie 3: Co oznacza skrót HTTP?",
-        "Pytanie 4: Co to jest sieć LAN?",
-        "Pytanie 5: Co oznacza skrót VPN?"
-    )
-
-    val correctAnswers = listOf(
-        "Unikalny adres urządzenia w sieci",
-        "System nazw domenowych",
-        "HyperText Transfer Protocol",
-        "Lokalna sieć komputerowa",
-        "Virtual Private Network"
-    )
-
-    val incorrectAnswers = listOf(
-        listOf("Protokół komunikacyjny", "Typ połączenia", "Adres e-mail"),
-        listOf("Rodzaj połączenia internetowego", "Protokół sieciowy", "Adres IP"),
-        listOf("HyperText Transmission Process", "High Transfer Protocol", "Home Transfer Protocol"),
-        listOf("Sieć rozległa", "Publiczna sieć komputerowa", "Sieć bezprzewodowa"),
-        listOf("Virtual Public Network", "Very Private Network", "Verified Private Network")
-    )
-
-
-    val initialOptions = questions.indices.map { index ->
-        listOf(correctAnswers[index]) + incorrectAnswers[index].shuffled()
-    }.map { it.shuffled() }
-
-    var options by remember { mutableStateOf(initialOptions) }
-    var currentQuestionIndex by remember { mutableStateOf(0) }
-    var correctCount by remember { mutableStateOf(0) }
-    var wrongCount by remember { mutableStateOf(0) }
+fun QuizScreen(
+    lessonId: Int,
+    questionViewModel: QuestionViewModel,
+    onFinish: (Int) -> Unit,
+    onBackToLessons: () -> Unit
+) {
+    val questions by questionViewModel.getQuestionsForLesson(lessonId).observeAsState(emptyList())
+    var currentQuestionIndex by rememberSaveable { mutableStateOf(0) }
+    var correctCount by rememberSaveable { mutableStateOf(0) }
+    var wrongCount by rememberSaveable { mutableStateOf(0) }
     var selectedOptionIndex by remember { mutableStateOf(-1) }
     var buttonColors by remember { mutableStateOf(List(4) { Color.Gray }) }
     val handler = Handler(Looper.getMainLooper())
@@ -85,11 +80,10 @@ fun QuizScreen(lessonIndex: Int, onFinish: (Int) -> Unit, onBackToLessons: () ->
     if (currentQuestionIndex < questions.size) {
         QuizQuestion(
             question = questions[currentQuestionIndex],
-            options = options[currentQuestionIndex],
             onAnswer = { answer, index ->
                 selectedOptionIndex = index
                 val newColors = buttonColors.toMutableList()
-                if (answer == correctAnswers[currentQuestionIndex]) {
+                if (answer == questions[currentQuestionIndex].correctAnswer) {
                     newColors[index] = Color.Green
                     correctCount++
                 } else {
@@ -116,7 +110,7 @@ fun QuizScreen(lessonIndex: Int, onFinish: (Int) -> Unit, onBackToLessons: () ->
         )
     } else {
         if (correctCount == questions.size) {
-            onFinish(lessonIndex)
+            onFinish(lessonId)
         } else {
             QuizSummary(
                 correctCount = correctCount,
@@ -128,7 +122,12 @@ fun QuizScreen(lessonIndex: Int, onFinish: (Int) -> Unit, onBackToLessons: () ->
 }
 
 @Composable
-fun QuizQuestion(question: String, options: List<String>, onAnswer: (String, Int) -> Unit, buttonColors: List<Color>, onBack: () -> Unit) {
+fun QuizQuestion(
+    question: Question,
+    onAnswer: (String, Int) -> Unit,
+    buttonColors: List<Color>,
+    onBack: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -137,14 +136,15 @@ fun QuizQuestion(question: String, options: List<String>, onAnswer: (String, Int
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = question,
+            text = question.text,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 32.dp)
         )
 
-        options.forEachIndexed { index, option ->
+        val options = listOf(question.correctAnswer) + question.incorrectAnswers
+        options.shuffled().forEachIndexed { index, option ->
             Button(
                 onClick = { onAnswer(option, index) },
                 colors = ButtonDefaults.buttonColors(containerColor = buttonColors[index]),
@@ -205,6 +205,6 @@ fun QuizSummary(correctCount: Int, wrongCount: Int, onBackToLessons: () -> Unit)
 @Composable
 fun QuizScreenPreview() {
     TeachMeTheme {
-        QuizScreen(lessonIndex = 0, onFinish = {}, onBackToLessons = {})
+        QuizScreen(lessonId = 0, questionViewModel = QuestionViewModel(QuestionRepository(AppDatabase.getDatabase(LocalContext.current, CoroutineScope(SupervisorJob())).questionDao())), onFinish = {}, onBackToLessons = {})
     }
 }

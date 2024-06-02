@@ -61,7 +61,7 @@ fun MainScreen(
     onSettings: () -> Unit,
     onAbout: () -> Unit
 ) {
-    var notificationsEnabled by remember { mutableStateOf(true) }
+
 
     Box(
         modifier = Modifier

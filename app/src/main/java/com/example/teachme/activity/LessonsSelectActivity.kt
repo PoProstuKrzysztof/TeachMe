@@ -1,38 +1,40 @@
 package com.example.teachme.activity
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.teachme.ui.theme.TeachMeTheme
-import com.example.teachme.models.NotificationUtils
+import com.example.teachme.data.AppDatabase
+import com.example.teachme.data.Lesson
 import com.example.teachme.data.SettingsPreferences
+import com.example.teachme.models.NotificationUtils
+import com.example.teachme.repositories.LessonRepository
+import com.example.teachme.viewmodel.LessonViewModel
+import com.example.teachme.viewmodel.LessonViewModelFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 
 class LessonSelectionActivity : ComponentActivity() {
 
     private lateinit var settingsPreferences: SettingsPreferences
-    private var completedLessons = mutableStateListOf(false, false, false)
-    private var lessons = mutableStateListOf("Lekcja 1", "Lekcja 2", "Lekcja 3")
     private var isNotificationsEnabled by mutableStateOf(true)
 
-    private val quizLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val lessonIndex = result.data?.getIntExtra("LESSON_INDEX", -1) ?: -1
-            if (lessonIndex >= 0) {
-                completedLessons[lessonIndex] = true
-            }
-        }
+    private val applicationScope = CoroutineScope(SupervisorJob())
+    private val database by lazy { AppDatabase.getDatabase(this, applicationScope) }
+    private val lessonRepository by lazy { LessonRepository(database.lessonDao()) }
+    private val lessonViewModel: LessonViewModel by viewModels {
+        LessonViewModelFactory(lessonRepository)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,18 +45,17 @@ class LessonSelectionActivity : ComponentActivity() {
 
         setContent {
             TeachMeTheme {
+                val lessons by lessonViewModel.allLessons.observeAsState(emptyList())
                 LessonSelectionScreen(
                     lessons = lessons,
-                    completedLessons = completedLessons,
-                    onLessonSelected = { lessonIndex ->
+                    onLessonSelected = { lessonId ->
                         val intent = Intent(this, QuizActivity::class.java)
-                        intent.putExtra("LESSON_INDEX", lessonIndex)
-                        quizLauncher.launch(intent)
+                        intent.putExtra("LESSON_ID", lessonId)
+                        startActivity(intent)
                     },
                     onAddLesson = {
-                        val newLesson = "Lekcja ${lessons.size + 1}"
-                        lessons.add(newLesson)
-                        completedLessons.add(false)
+                        val newLesson = Lesson(title = "Lekcja ${lessons.size + 1}")
+                        lessonViewModel.insert(newLesson)
                         if (isNotificationsEnabled) {
                             NotificationUtils.sendNewLessonNotification(this)
                         }
@@ -67,8 +68,7 @@ class LessonSelectionActivity : ComponentActivity() {
 
 @Composable
 fun LessonSelectionScreen(
-    lessons: List<String>,
-    completedLessons: List<Boolean>,
+    lessons: List<Lesson>,
     onLessonSelected: (Int) -> Unit,
     onAddLesson: () -> Unit
 ) {
@@ -79,13 +79,13 @@ fun LessonSelectionScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        lessons.forEachIndexed { index, lesson ->
+        lessons.forEach { lesson ->
             Button(
-                onClick = { onLessonSelected(index) },
+                onClick = { onLessonSelected(lesson.id) },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = if (completedLessons[index]) Color.Green else Color.Gray)
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
             ) {
-                Text(text = lesson)
+                Text(text = lesson.title)
             }
         }
 
@@ -102,8 +102,11 @@ fun LessonSelectionScreen(
 fun LessonSelectionScreenPreview() {
     TeachMeTheme {
         LessonSelectionScreen(
-            lessons = listOf("Lekcja 1", "Lekcja 2", "Lekcja 3"),
-            completedLessons = listOf(false, false, false),
+            lessons = listOf(
+                Lesson(id = 1, title = "Lekcja 1"),
+                Lesson(id = 2, title = "Lekcja 2"),
+                Lesson(id = 3, title = "Lekcja 3")
+            ),
             onLessonSelected = {},
             onAddLesson = {}
         )
