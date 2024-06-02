@@ -28,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.teachme.R
 import com.example.teachme.screen.AboutActivity
-import com.example.teachme.screen.SettingsActivity
 import com.example.teachme.ui.theme.TeachMeTheme
 
 class MainScreenActivity : ComponentActivity() {
@@ -80,13 +79,6 @@ fun MainScreen(
                 .align(Alignment.TopEnd),
             horizontalArrangement = Arrangement.End
         ) {
-            Icon(
-                imageVector = if (notificationsEnabled) Icons.Default.Notifications else Icons.Default.Delete,
-                contentDescription = "Powiadomienia",
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { notificationsEnabled = !notificationsEnabled }
-            )
             Icon(
                 imageVector = Icons.Default.Settings,
                 contentDescription = "Ustawienia",
