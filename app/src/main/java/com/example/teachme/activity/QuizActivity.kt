@@ -35,7 +35,8 @@ class QuizActivity : ComponentActivity() {
                         resultIntent.putExtra("LESSON_INDEX", it)
                         setResult(RESULT_OK, resultIntent)
                         finish()
-                    }
+                    },
+                    onBackToLessons = { finish() }
                 )
             }
         }
@@ -43,20 +44,35 @@ class QuizActivity : ComponentActivity() {
 }
 
 @Composable
-fun QuizScreen(lessonIndex: Int, onFinish: (Int) -> Unit) {
+fun QuizScreen(lessonIndex: Int, onFinish: (Int) -> Unit, onBackToLessons: () -> Unit) {
     val questions = listOf(
-        "Pytanie 1: Jaka jest stolica Polski?",
-        "Pytanie 2: Jaka jest stolica Niemiec?",
-        "Pytanie 3: Jaka jest stolica Francji?",
-        "Pytanie 4: Jaka jest stolica Włoch?",
-        "Pytanie 5: Jaka jest stolica Hiszpanii?"
+        "Pytanie 1: Co to jest adres IP?",
+        "Pytanie 2: Co to jest DNS?",
+        "Pytanie 3: Co oznacza skrót HTTP?",
+        "Pytanie 4: Co to jest sieć LAN?",
+        "Pytanie 5: Co oznacza skrót VPN?"
     )
 
-    val correctAnswers = listOf("Warszawa", "Berlin", "Paryż", "Rzym", "Madryt")
+    val correctAnswers = listOf(
+        "Unikalny adres urządzenia w sieci",
+        "System nazw domenowych",
+        "HyperText Transfer Protocol",
+        "Lokalna sieć komputerowa",
+        "Virtual Private Network"
+    )
+
+    val incorrectAnswers = listOf(
+        listOf("Protokół komunikacyjny", "Typ połączenia", "Adres e-mail"),
+        listOf("Rodzaj połączenia internetowego", "Protokół sieciowy", "Adres IP"),
+        listOf("HyperText Transmission Process", "High Transfer Protocol", "Home Transfer Protocol"),
+        listOf("Sieć rozległa", "Publiczna sieć komputerowa", "Sieć bezprzewodowa"),
+        listOf("Virtual Public Network", "Very Private Network", "Verified Private Network")
+    )
+
 
     val initialOptions = questions.indices.map { index ->
-        listOf(correctAnswers[index], "Błędna odpowiedź 1", "Błędna odpowiedź 2", "Błędna odpowiedź 3").shuffled()
-    }
+        listOf(correctAnswers[index]) + incorrectAnswers[index].shuffled()
+    }.map { it.shuffled() }
 
     var options by remember { mutableStateOf(initialOptions) }
     var currentQuestionIndex by remember { mutableStateOf(0) }
@@ -87,7 +103,16 @@ fun QuizScreen(lessonIndex: Int, onFinish: (Int) -> Unit) {
                     buttonColors = List(4) { Color.Gray }
                 }, 1000)
             },
-            buttonColors = buttonColors
+            buttonColors = buttonColors,
+            onBack = {
+                if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--
+                    selectedOptionIndex = -1
+                    buttonColors = List(4) { Color.Gray }
+                } else {
+                    onBackToLessons()
+                }
+            }
         )
     } else {
         if (correctCount == questions.size) {
@@ -103,7 +128,7 @@ fun QuizScreen(lessonIndex: Int, onFinish: (Int) -> Unit) {
 }
 
 @Composable
-fun QuizQuestion(question: String, options: List<String>, onAnswer: (String, Int) -> Unit, buttonColors: List<Color>) {
+fun QuizQuestion(question: String, options: List<String>, onAnswer: (String, Int) -> Unit, buttonColors: List<Color>, onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -129,6 +154,15 @@ fun QuizQuestion(question: String, options: List<String>, onAnswer: (String, Int
             ) {
                 Text(text = option)
             }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text(text = "Powrót")
         }
     }
 }
@@ -171,6 +205,6 @@ fun QuizSummary(correctCount: Int, wrongCount: Int, onBackToLessons: () -> Unit)
 @Composable
 fun QuizScreenPreview() {
     TeachMeTheme {
-        QuizScreen(lessonIndex = 0, onFinish = {})
+        QuizScreen(lessonIndex = 0, onFinish = {}, onBackToLessons = {})
     }
 }
