@@ -7,7 +7,7 @@ class SettingsPreferences(context: Context) {
     private val preferences: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     var notificationsEnabled: Boolean
-        get() = preferences.getBoolean(NOTIFICATIONS_ENABLED, true)
+        get() = preferences.getBoolean(NOTIFICATIONS_ENABLED, false)
         set(value) = preferences.edit().putBoolean(NOTIFICATIONS_ENABLED, value).apply()
 
     companion object {
