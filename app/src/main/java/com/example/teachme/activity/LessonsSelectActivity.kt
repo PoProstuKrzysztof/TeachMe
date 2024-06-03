@@ -49,7 +49,6 @@ class LessonSelectionActivity : ComponentActivity() {
         setContent {
             TeachMeTheme {
                 val lessons by lessonViewModel.allLessons.observeAsState(emptyList())
-                Log.d("LessonSelectionActivity", "Loaded lessons: ${lessons.size}")
                 LessonSelectionScreen(
                     lessons = lessons,
                     onLessonSelected = { lessonId ->

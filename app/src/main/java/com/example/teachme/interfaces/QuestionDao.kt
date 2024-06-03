@@ -1,6 +1,5 @@
 package com.example.teachme.interfaces
 
-
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -23,4 +22,3 @@ interface QuestionDao {
     @Query("DELETE FROM questions")
     suspend fun deleteAll()
 }
-

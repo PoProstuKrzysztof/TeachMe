@@ -79,9 +79,11 @@ fun QuizScreen(
     var buttonColors by remember { mutableStateOf(List(4) { Color.Gray }) }
     val handler = Handler(Looper.getMainLooper())
 
-    Log.d("QuizScreen", "Loaded questions: ${questions.size}")
 
-    if (currentQuestionIndex < questions.size) {
+if(questions.isEmpty()){
+    Text("Ładowanie pytań...")
+}
+    else if (currentQuestionIndex < questions.size) {
         QuizQuestion(
             question = questions[currentQuestionIndex],
             onAnswer = { answer, index ->
@@ -125,6 +127,7 @@ fun QuizScreen(
     }
 }
 
+
 @Composable
 fun QuizQuestion(
     question: Question,
@@ -135,7 +138,8 @@ fun QuizQuestion(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -171,6 +175,7 @@ fun QuizQuestion(
     }
 }
 
+
 @Composable
 fun QuizSummary(correctCount: Int, wrongCount: Int, onBackToLessons: () -> Unit) {
     Column(
@@ -205,10 +210,3 @@ fun QuizSummary(correctCount: Int, wrongCount: Int, onBackToLessons: () -> Unit)
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun QuizScreenPreview() {
-    TeachMeTheme {
-        QuizScreen(lessonId = 0, questionViewModel = QuestionViewModel(QuestionRepository(AppDatabase.getDatabase(LocalContext.current, CoroutineScope(SupervisorJob())).questionDao())), onFinish = {}, onBackToLessons = {})
-    }
-}

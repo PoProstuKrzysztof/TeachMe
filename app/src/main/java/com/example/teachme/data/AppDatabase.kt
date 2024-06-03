@@ -31,7 +31,6 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         suspend fun populateDatabase(lessonDao: LessonDao, questionDao: QuestionDao) {
-            // Dodaj lekcje
             val lesson1 = Lesson(title = "Lekcja 1: Podstawy sieci")
             val lesson2 = Lesson(title = "Lekcja 2: Protokół IP")
             val lesson3 = Lesson(title = "Lekcja 3: HTTP i HTTPS")
@@ -39,10 +38,8 @@ abstract class AppDatabase : RoomDatabase() {
             lessonDao.insertLesson(lesson2)
             lessonDao.insertLesson(lesson3)
 
-            // Pobierz ID lekcji
             val lessons = lessonDao.getAllLessonsOnce()
 
-            // Dodaj pytania do lekcji 1
             val questionsLesson1 = listOf(
                 Question(
                     lessonId = lessons[0].id,
@@ -58,7 +55,6 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             )
 
-            // Dodaj pytania do lekcji 2
             val questionsLesson2 = listOf(
                 Question(
                     lessonId = lessons[1].id,
@@ -80,7 +76,6 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             )
 
-            // Dodaj pytania do lekcji 3
             val questionsLesson3 = listOf(
                 Question(
                     lessonId = lessons[2].id,
