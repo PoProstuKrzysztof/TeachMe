@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -17,10 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,7 +40,6 @@ class QuizActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val lessonId = intent.getIntExtra("LESSON_ID", 0)
-        Log.d("QuizActivity", "Received lesson ID: $lessonId")
         setContent {
             TeachMeTheme {
                 QuizScreen(
@@ -79,8 +74,6 @@ fun QuizScreen(
     val answeredQuestions = rememberSaveable { mutableMapOf<Int, Boolean>() }
     val handler = Handler(Looper.getMainLooper())
 
-    Log.d("QuizScreen", "Loaded questions: ${questions.size}")
-
     if (questions.isEmpty()) {
         Text("Ładowanie pytań...")
     } else if (currentQuestionIndex < questions.size) {
@@ -91,12 +84,9 @@ fun QuizScreen(
                 val isCorrect = answer == questions[currentQuestionIndex].correctAnswer
                 val previousAnswer = answeredQuestions[currentQuestionIndex]
 
-                // Update the counts based on the new answer
                 if (previousAnswer == null) {
-                    // First time answering this question
                     if (isCorrect) correctCount++ else wrongCount++
                 } else if (previousAnswer != isCorrect) {
-                    // Changing the previous answer
                     if (isCorrect) {
                         correctCount++
                         wrongCount--

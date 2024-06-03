@@ -1,7 +1,6 @@
 package com.example.teachme.data
 
 import android.content.Context
-import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -24,19 +23,14 @@ abstract class AppDatabase : RoomDatabase() {
     ) : RoomDatabase.Callback() {
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
-            Log.d("AppDatabaseCallback", "Database onCreate triggered")
             INSTANCE?.let { database ->
                 scope.launch {
-                    Log.d("AppDatabaseCallback", "Calling populateDatabase")
                     populateDatabase(database.lessonDao(), database.questionDao())
                 }
             }
         }
 
         suspend fun populateDatabase(lessonDao: LessonDao, questionDao: QuestionDao) {
-            Log.d("AppDatabase", "Populating database with initial data")
-
-            // Insert initial lessons
             val lesson1 = Lesson(title = "Lekcja 1: Podstawy sieci")
             val lesson2 = Lesson(title = "Lekcja 2: Protokół IP")
             val lesson3 = Lesson(title = "Lekcja 3: HTTP i HTTPS")
@@ -44,11 +38,8 @@ abstract class AppDatabase : RoomDatabase() {
             lessonDao.insertLesson(lesson2)
             lessonDao.insertLesson(lesson3)
 
-            // Fetch lessons to get their IDs
             val lessons = lessonDao.getAllLessonsOnce()
-            Log.d("AppDatabase", "Inserted lessons with IDs: ${lessons.map { it.id }}")
 
-            // Add questions for each lesson
             if (lessons.isNotEmpty()) {
                 val questionsLesson1 = listOf(
                     Question(
@@ -105,9 +96,6 @@ abstract class AppDatabase : RoomDatabase() {
                 questionsLesson2.forEach { questionDao.insertQuestion(it) }
                 questionsLesson3.forEach { questionDao.insertQuestion(it) }
 
-                Log.d("AppDatabase", "Inserted questions for lessons")
-            } else {
-                Log.e("AppDatabase", "Failed to fetch lessons after insertion")
             }
         }
     }
@@ -117,7 +105,6 @@ abstract class AppDatabase : RoomDatabase() {
         private var INSTANCE: AppDatabase? = null
 
         fun getDatabase(context: Context, scope: CoroutineScope): AppDatabase {
-            Log.d("AppDatabase", "Getting the database instance")
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
@@ -127,7 +114,6 @@ abstract class AppDatabase : RoomDatabase() {
                     .addCallback(AppDatabaseCallback(scope))
                     .build()
                 INSTANCE = instance
-                Log.d("AppDatabase", "Created new database instance")
                 instance
             }
         }

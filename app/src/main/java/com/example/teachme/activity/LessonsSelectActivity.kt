@@ -2,7 +2,6 @@ package com.example.teachme.activity
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -49,7 +48,6 @@ class LessonSelectionActivity : ComponentActivity() {
         NotificationUtils.createNotificationChannel(this)
         isNotificationsEnabled = settingsPreferences.notificationsEnabled
 
-        // Manually populate database if empty
         applicationScope.launch(Dispatchers.IO) {
             populateDatabaseIfNeeded()
         }
@@ -57,17 +55,15 @@ class LessonSelectionActivity : ComponentActivity() {
         setContent {
             TeachMeTheme {
                 val lessons by lessonViewModel.allLessons.observeAsState(emptyList())
-                Log.d("LessonSelectionActivity", "Loaded lessons: ${lessons.size}")
                 LessonSelectionScreen(
                     lessons = lessons,
                     onLessonSelected = { lessonId ->
-                        Log.d("LessonSelectionActivity", "Selected lesson ID: $lessonId")
                         val intent = Intent(this, QuizActivity::class.java)
                         intent.putExtra("LESSON_ID", lessonId)
                     },
                     onAddLesson = {
                         val newLessonNumber = lessons.size + 1
-                        val newLesson = Lesson(title = "Lekcja $newLessonNumber")
+                        val newLesson = Lesson(title = "Lesson $newLessonNumber")
                         lessonViewModel.insert(newLesson)
                         if (isNotificationsEnabled) {
                             NotificationUtils.sendNewLessonNotification(this)
@@ -85,52 +81,47 @@ class LessonSelectionActivity : ComponentActivity() {
         val lessonDao = database.lessonDao()
         val questionDao = database.questionDao()
 
-        // Check if there are any lessons in the database
         if (lessonDao.getAllLessonsOnce().isEmpty()) {
-            Log.d("LessonSelectionActivity", "Database is empty. Populating with initial data.")
-
-
-            val lesson1 = Lesson(title = "Lekcja 1: Podstawy sieci")
-            val lesson2 = Lesson(title = "Lekcja 2: Protokół IP")
-            val lesson3 = Lesson(title = "Lekcja 3: HTTP i HTTPS")
+            val lesson1 = Lesson(title = "Lesson 1: Networking Basics")
+            val lesson2 = Lesson(title = "Lesson 2: IP Protocol")
+            val lesson3 = Lesson(title = "Lesson 3: HTTP and HTTPS")
             lessonDao.insertLesson(lesson1)
             lessonDao.insertLesson(lesson2)
             lessonDao.insertLesson(lesson3)
 
             val lessons = lessonDao.getAllLessonsOnce()
-            Log.d("LessonSelectionActivity", "Inserted lessons with IDs: ${lessons.map { it.id }}")
 
             val questionsLesson1 = listOf(
                 Question(
                     lessonId = lessons[0].id,
-                    text = "Co to jest adres IP?",
-                    correctAnswer = "Unikalny adres urządzenia w sieci",
-                    incorrectAnswers = listOf("Protokół komunikacyjny", "Typ połączenia", "Adres e-mail")
+                    text = "What is an IP address?",
+                    correctAnswer = "Unique address of a device in a network",
+                    incorrectAnswers = listOf("Communication protocol", "Connection type", "Email address")
                 ),
                 Question(
                     lessonId = lessons[0].id,
-                    text = "Co to jest DNS?",
-                    correctAnswer = "System nazw domenowych",
-                    incorrectAnswers = listOf("Rodzaj połączenia internetowego", "Protokół sieciowy", "Adres IP")
+                    text = "What is DNS?",
+                    correctAnswer = "Domain Name System",
+                    incorrectAnswers = listOf("Type of internet connection", "Network protocol", "IP address")
                 )
             )
 
             val questionsLesson2 = listOf(
                 Question(
                     lessonId = lessons[1].id,
-                    text = "Co oznacza skrót HTTP?",
+                    text = "What does HTTP stand for?",
                     correctAnswer = "HyperText Transfer Protocol",
                     incorrectAnswers = listOf("HyperText Transmission Process", "High Transfer Protocol", "Home Transfer Protocol")
                 ),
                 Question(
                     lessonId = lessons[1].id,
-                    text = "Co to jest sieć LAN?",
-                    correctAnswer = "Lokalna sieć komputerowa",
-                    incorrectAnswers = listOf("Sieć rozległa", "Publiczna sieć komputerowa", "Sieć bezprzewodowa")
+                    text = "What is a LAN?",
+                    correctAnswer = "Local Area Network",
+                    incorrectAnswers = listOf("Wide Area Network", "Public Network", "Wireless Network")
                 ),
                 Question(
                     lessonId = lessons[1].id,
-                    text = "Co oznacza skrót VPN?",
+                    text = "What does VPN stand for?",
                     correctAnswer = "Virtual Private Network",
                     incorrectAnswers = listOf("Virtual Public Network", "Very Private Network", "Verified Private Network")
                 )
@@ -139,13 +130,13 @@ class LessonSelectionActivity : ComponentActivity() {
             val questionsLesson3 = listOf(
                 Question(
                     lessonId = lessons[2].id,
-                    text = "Co oznacza skrót HTTPS?",
+                    text = "What does HTTPS stand for?",
                     correctAnswer = "HyperText Transfer Protocol Secure",
                     incorrectAnswers = listOf("HyperText Transmission Process Secure", "High Transfer Protocol Secure", "Home Transfer Protocol Secure")
                 ),
                 Question(
                     lessonId = lessons[2].id,
-                    text = "Który port jest używany przez HTTP?",
+                    text = "Which port is used by HTTP?",
                     correctAnswer = "Port 80",
                     incorrectAnswers = listOf("Port 21", "Port 443", "Port 25")
                 )
@@ -155,12 +146,9 @@ class LessonSelectionActivity : ComponentActivity() {
             questionsLesson2.forEach { questionDao.insertQuestion(it) }
             questionsLesson3.forEach { questionDao.insertQuestion(it) }
 
-        } else {
-            Log.d("LessonSelectionActivity", "Database already populated.")
         }
     }
 
-    @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)}\n      with the appropriate {@link ActivityResultContract} and handling the result in the\n      {@link ActivityResultCallback#onActivityResult(Object) callback}.")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == 1 && resultCode == RESULT_OK) {
             val lessonId = data?.getIntExtra("LESSON_ID", -1)
@@ -200,7 +188,7 @@ fun LessonSelectionScreen(
                     Text(text = lesson.title)
                 }
                 IconButton(onClick = { onDeleteLesson(lesson.id) }) {
-                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Usuń lekcję")
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete lesson")
                 }
             }
         }
@@ -208,7 +196,7 @@ fun LessonSelectionScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = onAddLesson) {
-            Text(text = "Dodaj nową lekcję")
+            Text(text = "Add new lesson")
         }
     }
 }
@@ -219,9 +207,9 @@ fun LessonSelectionScreenPreview() {
     TeachMeTheme {
         LessonSelectionScreen(
             lessons = listOf(
-                Lesson(id = 1, title = "Lekcja 1"),
-                Lesson(id = 2, title = "Lekcja 2"),
-                Lesson(id = 3, title = "Lekcja 3")
+                Lesson(id = 1, title = "Lesson 1"),
+                Lesson(id = 2, title = "Lesson 2"),
+                Lesson(id = 3, title = "Lesson 3")
             ),
             onLessonSelected = {},
             onAddLesson = {},
