@@ -8,7 +8,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -75,28 +74,44 @@ fun QuizScreen(
     var currentQuestionIndex by rememberSaveable { mutableStateOf(0) }
     var correctCount by rememberSaveable { mutableStateOf(0) }
     var wrongCount by rememberSaveable { mutableStateOf(0) }
-    var selectedOptionIndex by remember { mutableStateOf(-1) }
-    var buttonColors by remember { mutableStateOf(List(4) { Color.Gray }) }
+    var selectedOptionIndex by rememberSaveable { mutableStateOf(-1) }
+    var buttonColors by rememberSaveable { mutableStateOf(List(4) { Color.Gray }) }
+    val answeredQuestions = rememberSaveable { mutableMapOf<Int, Boolean>() }
     val handler = Handler(Looper.getMainLooper())
 
+    Log.d("QuizScreen", "Loaded questions: ${questions.size}")
 
-if(questions.isEmpty()){
-    Text("Ładowanie pytań...")
-}
-    else if (currentQuestionIndex < questions.size) {
+    if (questions.isEmpty()) {
+        Text("Ładowanie pytań...")
+    } else if (currentQuestionIndex < questions.size) {
         QuizQuestion(
             question = questions[currentQuestionIndex],
             onAnswer = { answer, index ->
                 selectedOptionIndex = index
-                val newColors = buttonColors.toMutableList()
-                if (answer == questions[currentQuestionIndex].correctAnswer) {
-                    newColors[index] = Color.Green
-                    correctCount++
-                } else {
-                    newColors[index] = Color.Red
-                    wrongCount++
+                val isCorrect = answer == questions[currentQuestionIndex].correctAnswer
+                val previousAnswer = answeredQuestions[currentQuestionIndex]
+
+                // Update the counts based on the new answer
+                if (previousAnswer == null) {
+                    // First time answering this question
+                    if (isCorrect) correctCount++ else wrongCount++
+                } else if (previousAnswer != isCorrect) {
+                    // Changing the previous answer
+                    if (isCorrect) {
+                        correctCount++
+                        wrongCount--
+                    } else {
+                        correctCount--
+                        wrongCount++
+                    }
                 }
+
+                answeredQuestions[currentQuestionIndex] = isCorrect
+
+                val newColors = buttonColors.toMutableList()
+                newColors[index] = if (isCorrect) Color.Green else Color.Red
                 buttonColors = newColors
+
                 handler.postDelayed({
                     currentQuestionIndex++
                     selectedOptionIndex = -1
@@ -115,15 +130,11 @@ if(questions.isEmpty()){
             }
         )
     } else {
-        if (correctCount == questions.size) {
-            onFinish(lessonId)
-        } else {
-            QuizSummary(
-                correctCount = correctCount,
-                wrongCount = wrongCount,
-                onBackToLessons = { onFinish(-1) }
-            )
-        }
+        QuizSummary(
+            correctCount = correctCount,
+            wrongCount = wrongCount,
+            onBackToLessons = { onFinish(-1) }
+        )
     }
 }
 
@@ -138,8 +149,7 @@ fun QuizQuestion(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .background(Color.White),
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -152,7 +162,7 @@ fun QuizQuestion(
         )
 
         val options = listOf(question.correctAnswer) + question.incorrectAnswers
-        options.shuffled().forEachIndexed { index, option ->
+        options.forEachIndexed { index, option ->
             Button(
                 onClick = { onAnswer(option, index) },
                 colors = ButtonDefaults.buttonColors(containerColor = buttonColors[index]),
@@ -174,7 +184,6 @@ fun QuizQuestion(
         }
     }
 }
-
 
 @Composable
 fun QuizSummary(correctCount: Int, wrongCount: Int, onBackToLessons: () -> Unit) {
@@ -210,3 +219,10 @@ fun QuizSummary(correctCount: Int, wrongCount: Int, onBackToLessons: () -> Unit)
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+fun QuizScreenPreview() {
+    TeachMeTheme {
+        QuizScreen(lessonId = 0, questionViewModel = QuestionViewModel(QuestionRepository(AppDatabase.getDatabase(LocalContext.current, CoroutineScope(SupervisorJob())).questionDao())), onFinish = {}, onBackToLessons = {})
+    }
+}

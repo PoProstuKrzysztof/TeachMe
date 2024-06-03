@@ -20,6 +20,10 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
     fun deleteLessonById(lessonId: Int) = viewModelScope.launch {
         repository.deleteLessonById(lessonId)
     }
+
+    fun markLessonAsCompleted(lessonId: Int) = viewModelScope.launch {
+        repository.markLessonAsCompleted(lessonId)
+    }
 }
 
 class LessonViewModelFactory(private val repository: LessonRepository) : ViewModelProvider.Factory {

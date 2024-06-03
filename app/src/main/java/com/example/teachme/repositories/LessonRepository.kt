@@ -19,4 +19,8 @@ class LessonRepository(private val lessonDao: LessonDao) {
     suspend fun deleteLessonById(lessonId: Int) {
         lessonDao.deleteLessonById(lessonId)
     }
+
+    suspend fun markLessonAsCompleted(lessonId: Int) {
+        lessonDao.markLessonAsCompleted(lessonId)
+    }
 }
