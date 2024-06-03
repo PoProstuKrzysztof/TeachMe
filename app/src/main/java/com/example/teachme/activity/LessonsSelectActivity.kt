@@ -48,9 +48,6 @@ class LessonSelectionActivity : ComponentActivity() {
         NotificationUtils.createNotificationChannel(this)
         isNotificationsEnabled = settingsPreferences.notificationsEnabled
 
-        applicationScope.launch(Dispatchers.IO) {
-            populateDatabaseIfNeeded()
-        }
 
         setContent {
             TeachMeTheme {
@@ -60,10 +57,11 @@ class LessonSelectionActivity : ComponentActivity() {
                     onLessonSelected = { lessonId ->
                         val intent = Intent(this, QuizActivity::class.java)
                         intent.putExtra("LESSON_ID", lessonId)
+                        startActivityForResult(intent, 1)
                     },
                     onAddLesson = {
                         val newLessonNumber = lessons.size + 1
-                        val newLesson = Lesson(title = "Lesson $newLessonNumber")
+                        val newLesson = Lesson(title = "Lekcja $newLessonNumber")
                         lessonViewModel.insert(newLesson)
                         if (isNotificationsEnabled) {
                             NotificationUtils.sendNewLessonNotification(this)
@@ -77,79 +75,9 @@ class LessonSelectionActivity : ComponentActivity() {
         }
     }
 
-    private suspend fun populateDatabaseIfNeeded() {
-        val lessonDao = database.lessonDao()
-        val questionDao = database.questionDao()
-
-        if (lessonDao.getAllLessonsOnce().isEmpty()) {
-            val lesson1 = Lesson(title = "Lesson 1: Networking Basics")
-            val lesson2 = Lesson(title = "Lesson 2: IP Protocol")
-            val lesson3 = Lesson(title = "Lesson 3: HTTP and HTTPS")
-            lessonDao.insertLesson(lesson1)
-            lessonDao.insertLesson(lesson2)
-            lessonDao.insertLesson(lesson3)
-
-            val lessons = lessonDao.getAllLessonsOnce()
-
-            val questionsLesson1 = listOf(
-                Question(
-                    lessonId = lessons[0].id,
-                    text = "What is an IP address?",
-                    correctAnswer = "Unique address of a device in a network",
-                    incorrectAnswers = listOf("Communication protocol", "Connection type", "Email address")
-                ),
-                Question(
-                    lessonId = lessons[0].id,
-                    text = "What is DNS?",
-                    correctAnswer = "Domain Name System",
-                    incorrectAnswers = listOf("Type of internet connection", "Network protocol", "IP address")
-                )
-            )
-
-            val questionsLesson2 = listOf(
-                Question(
-                    lessonId = lessons[1].id,
-                    text = "What does HTTP stand for?",
-                    correctAnswer = "HyperText Transfer Protocol",
-                    incorrectAnswers = listOf("HyperText Transmission Process", "High Transfer Protocol", "Home Transfer Protocol")
-                ),
-                Question(
-                    lessonId = lessons[1].id,
-                    text = "What is a LAN?",
-                    correctAnswer = "Local Area Network",
-                    incorrectAnswers = listOf("Wide Area Network", "Public Network", "Wireless Network")
-                ),
-                Question(
-                    lessonId = lessons[1].id,
-                    text = "What does VPN stand for?",
-                    correctAnswer = "Virtual Private Network",
-                    incorrectAnswers = listOf("Virtual Public Network", "Very Private Network", "Verified Private Network")
-                )
-            )
-
-            val questionsLesson3 = listOf(
-                Question(
-                    lessonId = lessons[2].id,
-                    text = "What does HTTPS stand for?",
-                    correctAnswer = "HyperText Transfer Protocol Secure",
-                    incorrectAnswers = listOf("HyperText Transmission Process Secure", "High Transfer Protocol Secure", "Home Transfer Protocol Secure")
-                ),
-                Question(
-                    lessonId = lessons[2].id,
-                    text = "Which port is used by HTTP?",
-                    correctAnswer = "Port 80",
-                    incorrectAnswers = listOf("Port 21", "Port 443", "Port 25")
-                )
-            )
-
-            questionsLesson1.forEach { questionDao.insertQuestion(it) }
-            questionsLesson2.forEach { questionDao.insertQuestion(it) }
-            questionsLesson3.forEach { questionDao.insertQuestion(it) }
-
-        }
-    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 1 && resultCode == RESULT_OK) {
             val lessonId = data?.getIntExtra("LESSON_ID", -1)
             if (lessonId != null && lessonId != -1) {
@@ -158,6 +86,9 @@ class LessonSelectionActivity : ComponentActivity() {
         }
     }
 }
+
+
+
 
 @Composable
 fun LessonSelectionScreen(
@@ -170,6 +101,7 @@ fun LessonSelectionScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
+
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -179,7 +111,7 @@ fun LessonSelectionScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val buttonColor = if (lesson.completed) Color.Green else Color.Gray
+                val buttonColor = if (lesson.completed) Color.Green else Color.DarkGray
                 Button(
                     onClick = { onLessonSelected(lesson.id) },
                     modifier = Modifier.weight(1f),
@@ -188,7 +120,7 @@ fun LessonSelectionScreen(
                     Text(text = lesson.title)
                 }
                 IconButton(onClick = { onDeleteLesson(lesson.id) }) {
-                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete lesson")
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Usuń lekcję")
                 }
             }
         }
@@ -196,7 +128,7 @@ fun LessonSelectionScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = onAddLesson) {
-            Text(text = "Add new lesson")
+            Text(text = "Dodaj nową lekcję")
         }
     }
 }
@@ -207,9 +139,9 @@ fun LessonSelectionScreenPreview() {
     TeachMeTheme {
         LessonSelectionScreen(
             lessons = listOf(
-                Lesson(id = 1, title = "Lesson 1"),
-                Lesson(id = 2, title = "Lesson 2"),
-                Lesson(id = 3, title = "Lesson 3")
+                Lesson(id = 1, title = "Lekcja 1"),
+                Lesson(id = 2, title = "Lekcja 2"),
+                Lesson(id = 3, title = "Lekcja 3")
             ),
             onLessonSelected = {},
             onAddLesson = {},

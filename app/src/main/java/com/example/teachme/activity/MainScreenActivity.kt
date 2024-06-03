@@ -4,6 +4,14 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateValue
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,6 +33,7 @@ import androidx.compose.ui.text.googlefonts.Font
 import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.teachme.R
 import com.example.teachme.screen.AboutActivity
@@ -62,16 +71,24 @@ fun MainScreen(
     onAbout: () -> Unit
 ) {
 
+    val infiniteTransition = rememberInfiniteTransition()
+    val buttonSize by infiniteTransition.animateValue(
+        initialValue = 200.dp,
+        targetValue = 215.dp,
+        typeConverter = Dp.VectorConverter,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ), label = ""
+    )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(listOf(Color(0xFF64B5F6),Color(0xFF0D47A1))
-                )
+                brush = Brush.verticalGradient(listOf(Color(0xFF6200EE), Color(0xFFBB86FC)))
             )
     ) {
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -83,7 +100,7 @@ fun MainScreen(
                 imageVector = Icons.Default.Settings,
                 contentDescription = "Ustawienia",
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(42.dp)
                     .clickable(onClick = onSettings)
             )
         }
@@ -95,7 +112,7 @@ fun MainScreen(
             Button(
                 onClick = onStartQuiz,
                 modifier = Modifier
-                    .size(200.dp)
+                    .size(buttonSize)
                     .clip(CircleShape),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White)
             ) {
@@ -121,6 +138,7 @@ fun MainScreen(
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
