@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -44,6 +45,7 @@ class QuizActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val lessonId = intent.getIntExtra("LESSON_ID", 0)
+        Log.d("QuizActivity", "Received lesson ID: $lessonId")
         setContent {
             TeachMeTheme {
                 QuizScreen(
@@ -76,6 +78,8 @@ fun QuizScreen(
     var selectedOptionIndex by remember { mutableStateOf(-1) }
     var buttonColors by remember { mutableStateOf(List(4) { Color.Gray }) }
     val handler = Handler(Looper.getMainLooper())
+
+    Log.d("QuizScreen", "Loaded questions: ${questions.size}")
 
     if (currentQuestionIndex < questions.size) {
         QuizQuestion(

@@ -15,4 +15,8 @@ class LessonRepository(private val lessonDao: LessonDao) {
     suspend fun delete(lesson: Lesson) {
         lessonDao.deleteLesson(lesson)
     }
+
+    suspend fun deleteLessonById(lessonId: Int) {
+        lessonDao.deleteLessonById(lessonId)
+    }
 }

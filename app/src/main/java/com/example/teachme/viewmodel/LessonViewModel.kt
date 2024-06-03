@@ -16,6 +16,10 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
     fun delete(lesson: Lesson) = viewModelScope.launch {
         repository.delete(lesson)
     }
+
+    fun deleteLessonById(lessonId: Int) = viewModelScope.launch {
+        repository.deleteLessonById(lessonId)
+    }
 }
 
 class LessonViewModelFactory(private val repository: LessonRepository) : ViewModelProvider.Factory {

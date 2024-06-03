@@ -31,27 +31,27 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         suspend fun populateDatabase(lessonDao: LessonDao, questionDao: QuestionDao) {
-            lessonDao.deleteAll()
-            questionDao.deleteAll()
-
             // Dodaj lekcje
-            val lesson1 = Lesson(id = 1, title = "Lekcja 1: Podstawy sieci")
-            val lesson2 = Lesson(id = 2, title = "Lekcja 2: Protokół IP")
+            val lesson1 = Lesson(title = "Lekcja 1: Podstawy sieci")
+            val lesson2 = Lesson(title = "Lekcja 2: Protokół IP")
+            val lesson3 = Lesson(title = "Lekcja 3: HTTP i HTTPS")
             lessonDao.insertLesson(lesson1)
             lessonDao.insertLesson(lesson2)
+            lessonDao.insertLesson(lesson3)
+
+            // Pobierz ID lekcji
+            val lessons = lessonDao.getAllLessonsOnce()
 
             // Dodaj pytania do lekcji 1
             val questionsLesson1 = listOf(
                 Question(
-                    id = 1,
-                    lessonId = 1,
+                    lessonId = lessons[0].id,
                     text = "Co to jest adres IP?",
                     correctAnswer = "Unikalny adres urządzenia w sieci",
                     incorrectAnswers = listOf("Protokół komunikacyjny", "Typ połączenia", "Adres e-mail")
                 ),
                 Question(
-                    id = 2,
-                    lessonId = 1,
+                    lessonId = lessons[0].id,
                     text = "Co to jest DNS?",
                     correctAnswer = "System nazw domenowych",
                     incorrectAnswers = listOf("Rodzaj połączenia internetowego", "Protokół sieciowy", "Adres IP")
@@ -61,30 +61,44 @@ abstract class AppDatabase : RoomDatabase() {
             // Dodaj pytania do lekcji 2
             val questionsLesson2 = listOf(
                 Question(
-                    id = 3,
-                    lessonId = 2,
+                    lessonId = lessons[1].id,
                     text = "Co oznacza skrót HTTP?",
                     correctAnswer = "HyperText Transfer Protocol",
                     incorrectAnswers = listOf("HyperText Transmission Process", "High Transfer Protocol", "Home Transfer Protocol")
                 ),
                 Question(
-                    id = 4,
-                    lessonId = 2,
+                    lessonId = lessons[1].id,
                     text = "Co to jest sieć LAN?",
                     correctAnswer = "Lokalna sieć komputerowa",
                     incorrectAnswers = listOf("Sieć rozległa", "Publiczna sieć komputerowa", "Sieć bezprzewodowa")
                 ),
                 Question(
-                    id = 5,
-                    lessonId = 2,
+                    lessonId = lessons[1].id,
                     text = "Co oznacza skrót VPN?",
                     correctAnswer = "Virtual Private Network",
                     incorrectAnswers = listOf("Virtual Public Network", "Very Private Network", "Verified Private Network")
                 )
             )
 
+            // Dodaj pytania do lekcji 3
+            val questionsLesson3 = listOf(
+                Question(
+                    lessonId = lessons[2].id,
+                    text = "Co oznacza skrót HTTPS?",
+                    correctAnswer = "HyperText Transfer Protocol Secure",
+                    incorrectAnswers = listOf("HyperText Transmission Process Secure", "High Transfer Protocol Secure", "Home Transfer Protocol Secure")
+                ),
+                Question(
+                    lessonId = lessons[2].id,
+                    text = "Który port jest używany przez HTTP?",
+                    correctAnswer = "Port 80",
+                    incorrectAnswers = listOf("Port 21", "Port 443", "Port 25")
+                )
+            )
+
             questionsLesson1.forEach { questionDao.insertQuestion(it) }
             questionsLesson2.forEach { questionDao.insertQuestion(it) }
+            questionsLesson3.forEach { questionDao.insertQuestion(it) }
         }
     }
 

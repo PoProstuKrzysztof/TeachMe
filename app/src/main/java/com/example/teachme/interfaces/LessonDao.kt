@@ -20,7 +20,12 @@ interface LessonDao {
     @Delete
     suspend fun deleteLesson(lesson: Lesson)
 
+    @Query("DELETE FROM lessons WHERE id = :lessonId")
+    suspend fun deleteLessonById(lessonId: Int)
+
     @Query("DELETE FROM lessons")
     suspend fun deleteAll()
-}
 
+    @Query("SELECT * FROM lessons")
+    suspend fun getAllLessonsOnce(): List<Lesson>
+}
