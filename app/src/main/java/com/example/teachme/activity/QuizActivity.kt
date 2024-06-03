@@ -24,6 +24,9 @@ import com.example.teachme.ui.theme.TeachMeTheme
 import com.example.teachme.data.AppDatabase
 import com.example.teachme.data.Question
 import com.example.teachme.repositories.QuestionRepository
+import com.example.teachme.repositories.LessonRepository
+import com.example.teachme.viewmodel.LessonViewModel
+import com.example.teachme.viewmodel.LessonViewModelFactory
 import com.example.teachme.viewmodel.QuestionViewModel
 import com.example.teachme.viewmodel.QuestionViewModelFactory
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +39,10 @@ class QuizActivity : ComponentActivity() {
     private val questionViewModel: QuestionViewModel by viewModels {
         QuestionViewModelFactory(questionRepository)
     }
+    private val lessonRepository by lazy { LessonRepository(database.lessonDao()) }
+    private val lessonViewModel: LessonViewModel by viewModels {
+        LessonViewModelFactory(lessonRepository)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +52,7 @@ class QuizActivity : ComponentActivity() {
                 QuizScreen(
                     lessonId = lessonId,
                     questionViewModel = questionViewModel,
+                    lessonViewModel = lessonViewModel,
                     onFinish = {
                         val resultIntent = Intent()
                         resultIntent.putExtra("LESSON_ID", it)
@@ -62,6 +70,7 @@ class QuizActivity : ComponentActivity() {
 fun QuizScreen(
     lessonId: Int,
     questionViewModel: QuestionViewModel,
+    lessonViewModel: LessonViewModel,
     onFinish: (Int) -> Unit,
     onBackToLessons: () -> Unit
 ) {
@@ -105,7 +114,7 @@ fun QuizScreen(
                 handler.postDelayed({
                     currentQuestionIndex++
                     selectedOptionIndex = -1
-                    buttonColors = List(4) { Color.Gray }
+                    buttonColors = List(4) { Color.DarkGray }
                 }, 1000)
             },
             buttonColors = buttonColors,
@@ -113,21 +122,23 @@ fun QuizScreen(
                 if (currentQuestionIndex > 0) {
                     currentQuestionIndex--
                     selectedOptionIndex = -1
-                    buttonColors = List(4) { Color.Gray }
+                    buttonColors = List(4) { Color.DarkGray }
                 } else {
                     onBackToLessons()
                 }
             }
         )
     } else {
+        if (correctCount == questions.size) {
+            lessonViewModel.markLessonAsCompleted(lessonId)
+        }
         QuizSummary(
             correctCount = correctCount,
             wrongCount = wrongCount,
-            onBackToLessons = { onFinish(-1) }
+            onBackToLessons = { onFinish(lessonId) }
         )
     }
 }
-
 
 @Composable
 fun QuizQuestion(
@@ -213,6 +224,6 @@ fun QuizSummary(correctCount: Int, wrongCount: Int, onBackToLessons: () -> Unit)
 @Composable
 fun QuizScreenPreview() {
     TeachMeTheme {
-        QuizScreen(lessonId = 0, questionViewModel = QuestionViewModel(QuestionRepository(AppDatabase.getDatabase(LocalContext.current, CoroutineScope(SupervisorJob())).questionDao())), onFinish = {}, onBackToLessons = {})
+        QuizScreen(lessonId = 0, questionViewModel = QuestionViewModel(QuestionRepository(AppDatabase.getDatabase(LocalContext.current, CoroutineScope(SupervisorJob())).questionDao())), lessonViewModel = LessonViewModel(LessonRepository(AppDatabase.getDatabase(LocalContext.current, CoroutineScope(SupervisorJob())).lessonDao())), onFinish = {}, onBackToLessons = {})
     }
 }

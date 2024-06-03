@@ -29,7 +29,6 @@ class LessonViewModel(private val repository: LessonRepository) : ViewModel() {
 class LessonViewModelFactory(private val repository: LessonRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(LessonViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
             return LessonViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
